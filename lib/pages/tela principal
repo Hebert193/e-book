@@ -1,0 +1,79 @@
+import 'package:flutter/material.dart';
+import '../../models/place.dart';
+
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  late Future<List<Observacao>> _eventosFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // Consome serviços web (API REST)
+    _eventosFuture = apiService.fetchEventosAstronomicos();
+  }
+
+  Future<void> _logout() async {
+    await authService.signOut();
+    // Simula a volta para a tela de login
+    Navigator.of(context).pushReplacementNamed('/');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Eventos Astronômicos de Hoje'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.exit_to_app),
+            onPressed: _logout,
+            tooltip: 'Sair',
+          ),
+        ],
+      ),
+      body: FutureBuilder<List<Observacao>>(
+        future: _eventosFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(
+                child: Text('Erro ao carregar dados da API: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('Nenhum evento encontrado.'));
+          } else {
+            // Exibe dados consumidos de uma API
+            return ListView.builder(
+              padding: const EdgeInsets.all(8.0),
+              itemCount: snapshot.data!.length,
+              itemBuilder: (context, index) {
+                final obs = snapshot.data![index];
+                return Card(
+                  elevation: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: ListTile(
+                    leading: const Icon(Icons.lens_sharp, color: Colors.lightBlueAccent),
+                    title: Text(obs.nome, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(obs.descricao),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => DetailScreen(observacao: obs),
+                      ));
+                    },
+                  ),
+                );
+              },
+            );
+          }
+        },
+      ),
+    );
+  }
+}

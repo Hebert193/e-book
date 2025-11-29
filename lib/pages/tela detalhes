@@ -1,0 +1,152 @@
+import 'package:flutter/material.dart';
+import '../../models/place.dart';
+
+class DetailScreen extends StatefulWidget {
+  final Observacao observacao;
+  const DetailScreen({required this.observacao, super.key});
+
+  @override
+  State<DetailScreen> createState() => _DetailScreenState();
+}
+
+class _DetailScreenState extends State<DetailScreen> {
+  // Simula o arquivo selecionado pela câmera/galeria
+  String? _capturedImagePath;
+  bool _isSaving = false;
+  bool _isFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isFavorite = widget.observacao.isFavorita;
+  }
+
+  // Integração com Recurso Nativo: Câmera ou Galeria
+  Future<void> _pickImage() async {
+    // Lógica real: final ImagePicker picker = ImagePicker();
+    // final XFile? image = await picker.pickImage(source: ImageSource.camera);
+    // ou: final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    // Simulação:
+    await Future.delayed(const Duration(seconds: 1));
+    setState(() {
+      _capturedImagePath = 'mock_image_path_${DateTime.now().millisecond}.jpg';
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Foto mockada capturada/selecionada!')),
+      );
+    });
+  }
+
+  // Persistência de dados na nuvem (Firebase Firestore)
+  Future<void> _toggleFavorite() async {
+    if (authService.currentUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Você precisa estar logado para favoritar.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _isFavorite = !_isFavorite;
+    });
+
+    try {
+      if (_isFavorite) {
+        // Salvar na nuvem (Firestore)
+        await firestoreService.saveFavorite(
+            authService.currentUserId!, widget.observacao);
+      } else {
+        // Lógica de remoção (mockada)
+        await Future.delayed(const Duration(milliseconds: 500));
+        print('Firestore Mock: Removendo favorito...');
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(_isFavorite
+                ? 'Observação favoritada e salva!'
+                : 'Favorito removido.')),
+      );
+    } catch (e) {
+      // Reverte o estado em caso de erro
+      setState(() {
+        _isFavorite = !_isFavorite;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao salvar no Firebase: $e')),
+      );
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.observacao.nome),
+        actions: [
+          IconButton(
+            // Interação: Favoritar/Salvar na nuvem
+            icon: Icon(
+              _isFavorite ? Icons.star : Icons.star_border,
+              color: _isFavorite ? Colors.amber : Colors.white,
+            ),
+            onPressed: _isSaving ? null : _toggleFavorite,
+            tooltip: 'Favoritar',
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Image.network(
+              widget.observacao.urlImagem,
+              height: 250,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              // Fallback/Placeholder
+              errorBuilder: (context, error, stackTrace) => Container(
+                height: 250,
+                color: Colors.grey.shade900,
+                child: const Center(
+                    child: Text('Imagem Indisponível',
+                        style: TextStyle(color: Colors.white70))),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              widget.observacao.nome,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.lightBlueAccent),
+            ),
+            const Divider(color: Colors.white24),
+            Text(
+              widget.observacao.descricao,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 30),
+            // Botão para Recurso Nativo
+            ElevatedButton.icon(
+              onPressed: _pickImage,
+              icon: const Icon(Icons.camera_alt, color: Colors.white),
+              label: const Text('Adicionar Foto de Observação', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            const SizedBox(height: 20),
+            if (_capturedImagePath != null)
+              Text('Caminho da Imagem Mockada: $_capturedImagePath'),
+          ],
+        ),
+      ),
+    );
+  }
+}
