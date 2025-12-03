@@ -1,4 +1,4 @@
-name: flutter_appstar
+name: ebuck
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -31,11 +31,17 @@ dependencies:
   flutter:
     sdk: flutter
 
-  firebase_core: ^4.2.1
-  firebase_auth: ^6.1.2
-  cloud_firestore: ^6.1.0
-  image_picker: ^1.2.1
-  flutter_local_notifications: ^19.5.0
+  provider: ^6.0.5
+  http: ^0.13.6
+  firebase_core: ^2.8.0
+  firebase_auth: ^4.4.0
+  cloud_firestore: ^4.5.0
+  firebase_messaging: ^14.3.0
+  image_picker: ^0.8.7+1
+  geolocator: ^9.0.2
+  url_launcher: ^6.1.10
+  intl: ^0.18.0
+  flutter_svg: ^2.0.7
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
